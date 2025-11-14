@@ -32,7 +32,11 @@ fn test_trace_contexts_parsed() {
 
     // Verify title
     assert!(context.title.is_some());
-    assert!(context.title.as_ref().unwrap().contains("Boid Pointer Tracking"));
+    assert!(context
+        .title
+        .as_ref()
+        .unwrap()
+        .contains("Boid Pointer Tracking"));
 }
 
 #[test]
@@ -80,7 +84,10 @@ fn test_trace_action_details() {
 
     let action = new_page_action.unwrap();
     assert_eq!(action.class.as_deref(), Some("BrowserContext"));
-    assert!(action.end_time > action.start_time, "Action has no duration");
+    assert!(
+        action.end_time > action.start_time,
+        "Action has no duration"
+    );
 }
 
 #[test]
@@ -99,7 +106,10 @@ fn test_trace_goto_action() {
 
     let action = goto_action.unwrap();
     assert_eq!(action.class.as_deref(), Some("Frame"));
-    assert!(action.params.contains_key("url"), "goto action missing url param");
+    assert!(
+        action.params.contains_key("url"),
+        "goto action missing url param"
+    );
 }
 
 #[test]
@@ -112,8 +122,10 @@ fn test_trace_events_parsed() {
 
     // Verify we have different event types across all contexts
     let all_events: Vec<_> = model.contexts.iter().flat_map(|c| &c.events).collect();
-    
-    let has_before = all_events.iter().any(|e| matches!(e, TraceEvent::Before(_)));
+
+    let has_before = all_events
+        .iter()
+        .any(|e| matches!(e, TraceEvent::Before(_)));
     let has_after = all_events.iter().any(|e| matches!(e, TraceEvent::After(_)));
 
     assert!(has_before, "No before events found");

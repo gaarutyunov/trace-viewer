@@ -75,5 +75,57 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
 
-      - name: Run cargo test
-        run: cargo test --all-features
+      - name: Run unit tests
+        run: cargo test --lib --all-features
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Trunk
+        run: |
+          wget -qO- https://github.com/trunk-rs/trunk/releases/download/v0.18.8/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+          sudo mv trunk /usr/local/bin/
+
+      - name: Install Playwright
+        run: |
+          npm install -D @playwright/test
+          npx playwright install --with-deps chromium
+
+      - name: Build WASM app
+        run: trunk build --release
+
+      - name: Serve app in background
+        run: |
+          cd dist
+          python3 -m http.server 8080 &
+          echo $! > server.pid
+          sleep 3
+
+      - name: Run E2E tests
+        run: cargo test --test e2e_tests --features e2e-tests -- --ignored
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f dist/server.pid ]; then
+            kill $(cat dist/server.pid) || true
+          fi

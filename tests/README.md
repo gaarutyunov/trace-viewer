@@ -11,33 +11,26 @@ cargo test --lib
 ```
 
 These tests cover:
-- **trace_loader_tests.rs**: ZIP parsing, trace loading, event parsing
-- **models_tests.rs**: Data model serialization/deserialization
+- **trace_loader_tests.rs**: ZIP parsing, trace loading, event parsing (11 tests)
+- **models_tests.rs**: Data model serialization/deserialization (14 tests)
 
 ## End-to-End Tests
 
-E2E tests using playwright-rust are available in `e2e_tests.rs` but are currently disabled by default due to playwright-rust driver installation complexity.
+E2E tests using playwright-rust are now enabled and run automatically in CI.
 
-To enable E2E tests:
+### Running E2E Tests Locally
 
-1. Uncomment the playwright dependencies in `Cargo.toml`:
-   ```toml
-   [dev-dependencies]
-   playwright = "0.0.20"
-   tokio = { version = "1", features = ["full"] }
-   ```
-
-2. Install playwright browsers:
+1. Install playwright browsers:
    ```bash
    npx playwright install chromium
    ```
 
-3. Build and serve the application:
+2. Build and serve the application:
    ```bash
    trunk serve
    ```
 
-4. Run E2E tests:
+3. In another terminal, run E2E tests:
    ```bash
    cargo test --test e2e_tests -- --ignored
    ```
@@ -47,16 +40,24 @@ To enable E2E tests:
 The E2E tests verify:
 - Application loads in browser
 - File upload UI interactions
-- Drag-and-drop functionality
 - Trace file parsing and display
 - Action selection and details view
-- Error handling for invalid files
+- Complete user workflow from file drop to viewing trace details
 
 ## Test Fixtures
 
 - `fixtures/sample-trace.zip`: Real Playwright trace file extracted from the test report
-- Contains actual trace events, network logs, and resources
+- Contains actual trace events, network logs, screenshots, and WASM resources
+- 177KB authentic test data from real Playwright test execution
 
 ## Running Tests in CI
 
-Unit tests run automatically in GitHub Actions CI on every push. E2E tests are optional and can be added to CI when playwright driver support is configured.
+**Automated CI Testing:**
+- **Unit Tests**: Run on every push via `cargo test --lib`
+- **E2E Tests**: Run on every push via separate E2E job
+  - Playwright chromium is installed automatically
+  - App is built with Trunk and served on port 8080
+  - Tests run with `--ignored` flag
+  - All cleanup handled automatically
+
+Both test suites must pass for CI to succeed.

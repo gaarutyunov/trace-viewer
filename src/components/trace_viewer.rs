@@ -1,6 +1,6 @@
+use super::{ActionDetails, ActionList};
+use crate::models::{ActionEntry, TraceModel};
 use yew::prelude::*;
-use crate::models::{TraceModel, ActionEntry};
-use super::{ActionList, ActionDetails};
 
 #[derive(Properties, PartialEq)]
 pub struct TraceViewerProps {
@@ -49,7 +49,7 @@ impl Component for TraceViewer {
                             html! {
                                 <>
                                     <h2>
-                                        { ctx.title.as_ref().map(|s| s.as_str()).unwrap_or("Trace") }
+                                        { ctx.title.as_deref().unwrap_or("Trace") }
                                     </h2>
                                     <div class="context-info">
                                         <span class="browser">{ &ctx.browser_name }</span>

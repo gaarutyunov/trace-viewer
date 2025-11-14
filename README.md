@@ -1,6 +1,15 @@
 # Playwright Trace Viewer - Rust Edition
 
+[![CI](https://github.com/gaarutyunov/trace-viewer/workflows/CI/badge.svg)](https://github.com/gaarutyunov/trace-viewer/actions/workflows/ci.yml)
+[![Build and Deploy](https://github.com/gaarutyunov/trace-viewer/workflows/Build%20and%20Deploy/badge.svg)](https://github.com/gaarutyunov/trace-viewer/actions/workflows/deploy.yml)
+
 A browser-based Playwright trace viewer built with Rust and Yew (WebAssembly).
+
+## 🚀 Live Demo
+
+**[Try it now →](https://gaarutyunov.github.io/trace-viewer/)**
+
+No installation required! Just open the link and drop your Playwright trace file.
 
 ## Features
 
@@ -14,6 +23,18 @@ A browser-based Playwright trace viewer built with Rust and Yew (WebAssembly).
 ## What is this?
 
 This is a Rust/WebAssembly reimplementation of the official [Playwright trace viewer](https://github.com/microsoft/playwright/tree/main/packages/trace-viewer), designed to run entirely in the browser without requiring Node.js or a development server.
+
+## CI/CD
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+- **CI Workflow**: Runs on every push, performing:
+  - Code formatting check with `cargo fmt`
+  - Linting with `cargo clippy`
+  - Compilation check
+  - Tests
+
+- **Deploy Workflow**: Automatically builds and deploys to GitHub Pages when pushing to main or claude branches
 
 ## Building
 

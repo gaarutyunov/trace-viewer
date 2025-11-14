@@ -6,6 +6,12 @@ pub struct TraceModel {
     pub contexts: Vec<ContextEntry>,
 }
 
+impl Default for TraceModel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TraceModel {
     pub fn new() -> Self {
         Self {

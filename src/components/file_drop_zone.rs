@@ -1,6 +1,6 @@
-use yew::prelude::*;
+use wasm_bindgen::{closure::Closure, JsCast};
 use web_sys::{DragEvent, Event, File, HtmlInputElement};
-use wasm_bindgen::{JsCast, closure::Closure};
+use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
 pub struct FileDropZoneProps {
@@ -61,7 +61,8 @@ impl Component for FileDropZone {
 
         let ondrop = link.callback(|e: DragEvent| {
             e.prevent_default();
-            let files = e.data_transfer()
+            let files = e
+                .data_transfer()
                 .and_then(|dt| dt.files())
                 .map(|file_list| {
                     let mut files = Vec::new();
@@ -95,7 +96,8 @@ impl Component for FileDropZone {
                                     link.send_message(FileDropZoneMsg::FileSelected(file));
                                 }
                             }
-                        }) as Box<dyn FnMut(_)>);
+                        })
+                            as Box<dyn FnMut(_)>);
 
                         input.set_onchange(Some(onchange.as_ref().unchecked_ref()));
                         onchange.forget();

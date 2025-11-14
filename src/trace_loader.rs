@@ -7,6 +7,7 @@ use zip::ZipArchive;
 pub enum LoadError {
     ZipError(String),
     IoError(String),
+    #[allow(dead_code)]
     ParseError(String),
     MissingTraceFile,
 }
@@ -28,8 +29,7 @@ pub fn load_trace_from_zip(bytes: &[u8]) -> Result<TraceModel, LoadError> {
     log::info!("Parsing ZIP archive...");
 
     let cursor = Cursor::new(bytes);
-    let mut archive = ZipArchive::new(cursor)
-        .map_err(|e| LoadError::ZipError(e.to_string()))?;
+    let mut archive = ZipArchive::new(cursor).map_err(|e| LoadError::ZipError(e.to_string()))?;
 
     log::info!("ZIP archive opened, {} entries found", archive.len());
 
@@ -39,7 +39,8 @@ pub fn load_trace_from_zip(bytes: &[u8]) -> Result<TraceModel, LoadError> {
     let mut resources = HashMap::new();
 
     for i in 0..archive.len() {
-        let file = archive.by_index(i)
+        let file = archive
+            .by_index(i)
             .map_err(|e| LoadError::ZipError(e.to_string()))?;
         let name = file.name().to_string();
 
@@ -85,8 +86,12 @@ pub fn load_trace_from_zip(bytes: &[u8]) -> Result<TraceModel, LoadError> {
     Ok(TraceModel { contexts })
 }
 
-fn read_file_from_archive(archive: &mut ZipArchive<Cursor<&[u8]>>, name: &str) -> Result<String, LoadError> {
-    let mut file = archive.by_name(name)
+fn read_file_from_archive(
+    archive: &mut ZipArchive<Cursor<&[u8]>>,
+    name: &str,
+) -> Result<String, LoadError> {
+    let mut file = archive
+        .by_name(name)
         .map_err(|e| LoadError::ZipError(format!("Failed to read {}: {}", name, e)))?;
 
     let mut content = String::new();
@@ -96,7 +101,10 @@ fn read_file_from_archive(archive: &mut ZipArchive<Cursor<&[u8]>>, name: &str) -
     Ok(content)
 }
 
-fn parse_trace(trace_content: &str, network_content: Option<String>) -> Result<ContextEntry, LoadError> {
+fn parse_trace(
+    trace_content: &str,
+    network_content: Option<String>,
+) -> Result<ContextEntry, LoadError> {
     let mut actions_map: HashMap<String, ActionEntry> = HashMap::new();
     let mut pages: HashMap<String, PageEntry> = HashMap::new();
     let mut events = Vec::new();
@@ -167,10 +175,13 @@ fn parse_trace(trace_content: &str, network_content: Option<String>) -> Result<C
                         }
                     }
                     TraceEvent::ScreencastFrame(frame) => {
-                        let page = pages.entry(frame.page_id.clone()).or_insert_with(|| PageEntry {
-                            page_id: frame.page_id.clone(),
-                            screencast_frames: Vec::new(),
-                        });
+                        let page =
+                            pages
+                                .entry(frame.page_id.clone())
+                                .or_insert_with(|| PageEntry {
+                                    page_id: frame.page_id.clone(),
+                                    screencast_frames: Vec::new(),
+                                });
 
                         page.screencast_frames.push(ScreencastFrame {
                             sha1: frame.sha1.clone(),
@@ -206,20 +217,22 @@ fn parse_trace(trace_content: &str, network_content: Option<String>) -> Result<C
     }
 
     // Convert maps to vectors
-    context.actions = actions_map.into_iter()
-        .map(|(_, action)| action)
-        .collect();
+    context.actions = actions_map.into_values().collect();
 
-    context.actions.sort_by(|a, b| a.start_time.partial_cmp(&b.start_time).unwrap());
+    context
+        .actions
+        .sort_by(|a, b| a.start_time.partial_cmp(&b.start_time).unwrap());
 
-    context.pages = pages.into_iter()
-        .map(|(_, page)| page)
-        .collect();
+    context.pages = pages.into_values().collect();
 
     context.events = events;
     context.errors = errors;
 
-    log::info!("Parsed {} actions, {} pages", context.actions.len(), context.pages.len());
+    log::info!(
+        "Parsed {} actions, {} pages",
+        context.actions.len(),
+        context.pages.len()
+    );
 
     Ok(context)
 }

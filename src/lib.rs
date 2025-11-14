@@ -1,13 +1,13 @@
-use yew::prelude::*;
-use yew::html::Scope;
-use web_sys::File;
-use wasm_bindgen::prelude::*;
 use gloo::file::{callbacks::FileReader, File as GlooFile};
 use std::collections::HashMap;
+use wasm_bindgen::prelude::*;
+use web_sys::File;
+use yew::html::Scope;
+use yew::prelude::*;
 
+mod components;
 mod models;
 mod trace_loader;
-mod components;
 
 use components::{FileDropZone, TraceViewer};
 use models::TraceModel;
@@ -169,7 +169,10 @@ impl App {
                     }
                     Err(e) => {
                         log::error!("Error reading file: {:?}", e);
-                        link.send_message(AppMessage::LoadError(format!("Error reading file: {:?}", e)));
+                        link.send_message(AppMessage::LoadError(format!(
+                            "Error reading file: {:?}",
+                            e
+                        )));
                     }
                 }
             })

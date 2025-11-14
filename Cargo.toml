@@ -35,6 +35,17 @@ serde_json = "1.0"
 log = "0.4"
 wasm-logger = "0.2"
 
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+tempfile = "3.8"
+
+# Optional: Uncomment for E2E tests (requires playwright driver installation)
+# playwright = "0.0.20"
+# tokio = { version = "1", features = ["full"] }
+
 [profile.release]
 opt-level = "z"
 lto = true
+
+[profile.test]
+opt-level = 0

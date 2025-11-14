@@ -6,8 +6,8 @@ use yew::html::Scope;
 use yew::prelude::*;
 
 mod components;
-mod models;
-mod trace_loader;
+pub mod models;
+pub mod trace_loader;
 
 use components::{FileDropZone, TraceViewer};
 use models::TraceModel;

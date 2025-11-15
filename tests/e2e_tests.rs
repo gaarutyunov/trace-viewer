@@ -6,6 +6,8 @@
 #![cfg(feature = "e2e-tests")]
 
 use ::playwright::api::*;
+use playwright::imp::utils::File;
+use std::fs;
 use std::path::PathBuf;
 
 #[tokio::test]
@@ -64,8 +66,19 @@ async fn test_trace_file_upload_and_display() -> Result<(), Box<dyn std::error::
         .wait_for_selector()
         .await?
         .expect("File input not found");
+    let file_contents = fs::read(&trace_path)?;
+    let file = File::new(
+        trace_path
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string(),
+        "application/zip".to_string(),
+        &file_contents,
+    );
     file_input
-        .set_input_files_builder(trace_path.to_str().unwrap())
+        .set_input_files_builder(file)
         .set_input_files()
         .await?;
 
@@ -114,8 +127,19 @@ async fn test_action_selection() -> Result<(), Box<dyn std::error::Error>> {
         .wait_for_selector()
         .await?
         .expect("File input not found");
+    let file_contents = fs::read(&trace_path)?;
+    let file = File::new(
+        trace_path
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string(),
+        "application/zip".to_string(),
+        &file_contents,
+    );
     file_input
-        .set_input_files_builder(trace_path.to_str().unwrap())
+        .set_input_files_builder(file)
         .set_input_files()
         .await?;
 

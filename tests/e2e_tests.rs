@@ -5,6 +5,7 @@
 
 #![cfg(feature = "e2e-tests")]
 
+use ::playwright::api::element_handle::File;
 use ::playwright::api::*;
 use std::path::PathBuf;
 
@@ -65,7 +66,8 @@ async fn test_trace_file_upload_and_display() -> Result<(), Box<dyn std::error::
         .await?
         .expect("File input not found");
     file_input
-        .set_input_files(vec![trace_path.to_str().unwrap()], Default::default())
+        .set_input_files_builder(File::Path(trace_path.clone()))
+        .set_input_files()
         .await?;
 
     page.wait_for_selector_builder(".trace-viewer")
@@ -114,7 +116,8 @@ async fn test_action_selection() -> Result<(), Box<dyn std::error::Error>> {
         .await?
         .expect("File input not found");
     file_input
-        .set_input_files(vec![trace_path.to_str().unwrap()], Default::default())
+        .set_input_files_builder(File::Path(trace_path.clone()))
+        .set_input_files()
         .await?;
 
     // Wait for actions to load
@@ -125,7 +128,7 @@ async fn test_action_selection() -> Result<(), Box<dyn std::error::Error>> {
         .expect("First action not found");
 
     // Click the first action
-    first_action.click(Default::default()).await?;
+    first_action.click_builder().click().await?;
 
     // Wait for action details to appear
     page.wait_for_selector_builder(".action-details")

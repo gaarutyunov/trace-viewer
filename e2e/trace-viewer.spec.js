@@ -21,12 +21,13 @@ test.describe('Trace Viewer', () => {
 
     const tracePath = path.join(__dirname, '..', 'tests', 'fixtures', 'sample-trace.zip');
 
-    // Click the file select button and upload the trace
+    // Wait for file input to be attached and set files
     const fileInput = page.locator('input[type="file"]');
+    await fileInput.waitFor({ state: 'attached', timeout: 5000 });
     await fileInput.setInputFiles(tracePath);
 
     // Wait for trace viewer to load
-    await expect(page.locator('.trace-viewer')).toBeVisible();
+    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.action-list')).toBeVisible();
 
     // Verify actions are displayed
@@ -39,12 +40,13 @@ test.describe('Trace Viewer', () => {
 
     const tracePath = path.join(__dirname, '..', 'tests', 'fixtures', 'sample-trace.zip');
 
-    // Upload trace file
+    // Wait for file input and upload trace file
     const fileInput = page.locator('input[type="file"]');
+    await fileInput.waitFor({ state: 'attached', timeout: 5000 });
     await fileInput.setInputFiles(tracePath);
 
     // Wait for actions to load
-    await expect(page.locator('.action-item').first()).toBeVisible();
+    await expect(page.locator('.action-item').first()).toBeVisible({ timeout: 10000 });
 
     // Click the first action
     await page.locator('.action-item').first().click();

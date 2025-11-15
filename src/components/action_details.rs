@@ -1,3 +1,4 @@
+use super::AnsiText;
 use crate::models::ActionEntry;
 use yew::prelude::*;
 
@@ -121,7 +122,11 @@ pub fn action_details(props: &ActionDetailsProps) -> Html {
                             <div class="detail-label">{ "Error" }</div>
                             {
                                 if let Some(message) = &error.message {
-                                    html! { <div class="error-message">{ message }</div> }
+                                    html! {
+                                        <div class="error-message">
+                                            <AnsiText text={message.clone()} />
+                                        </div>
+                                    }
                                 } else {
                                     html! {}
                                 }
@@ -129,9 +134,9 @@ pub fn action_details(props: &ActionDetailsProps) -> Html {
                             {
                                 if let Some(stack) = &error.stack {
                                     html! {
-                                        <details class="error-stack">
+                                        <details class="error-stack" open={true}>
                                             <summary>{ "Stack Trace" }</summary>
-                                            <pre>{ stack }</pre>
+                                            <pre class="ansi-pre"><AnsiText text={stack.clone()} /></pre>
                                         </details>
                                     }
                                 } else {

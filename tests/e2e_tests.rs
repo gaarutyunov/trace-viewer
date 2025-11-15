@@ -62,7 +62,8 @@ async fn test_trace_file_upload_and_display() -> Result<(), Box<dyn std::error::
     let file_input = page
         .wait_for_selector_builder("input[type='file']")
         .wait_for_selector()
-        .await?;
+        .await?
+        .expect("File input not found");
     file_input
         .set_input_files(vec![trace_path.to_str().unwrap()], Default::default())
         .await?;
@@ -110,7 +111,8 @@ async fn test_action_selection() -> Result<(), Box<dyn std::error::Error>> {
     let file_input = page
         .wait_for_selector_builder("input[type='file']")
         .wait_for_selector()
-        .await?;
+        .await?
+        .expect("File input not found");
     file_input
         .set_input_files(vec![trace_path.to_str().unwrap()], Default::default())
         .await?;
@@ -119,7 +121,8 @@ async fn test_action_selection() -> Result<(), Box<dyn std::error::Error>> {
     let first_action = page
         .wait_for_selector_builder(".action-item")
         .wait_for_selector()
-        .await?;
+        .await?
+        .expect("First action not found");
 
     // Click the first action
     first_action.click(Default::default()).await?;

@@ -5,3 +5,8 @@ dist = "dist"
 [serve]
 port = 8080
 address = "127.0.0.1"
+
+[tools]
+# Disable wasm-opt due to parsing errors with certain versions
+# Rely on Rust's release profile optimization (opt-level = "z", lto = true)
+wasm-opt = false

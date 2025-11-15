@@ -5,7 +5,6 @@
 
 #![cfg(feature = "e2e-tests")]
 
-use ::playwright::api::element_handle::File;
 use ::playwright::api::*;
 use std::path::PathBuf;
 
@@ -66,7 +65,7 @@ async fn test_trace_file_upload_and_display() -> Result<(), Box<dyn std::error::
         .await?
         .expect("File input not found");
     file_input
-        .set_input_files_builder(File::Path(trace_path.clone()))
+        .set_input_files_builder(trace_path.to_str().unwrap())
         .set_input_files()
         .await?;
 
@@ -116,7 +115,7 @@ async fn test_action_selection() -> Result<(), Box<dyn std::error::Error>> {
         .await?
         .expect("File input not found");
     file_input
-        .set_input_files_builder(File::Path(trace_path.clone()))
+        .set_input_files_builder(trace_path.to_str().unwrap())
         .set_input_files()
         .await?;
 

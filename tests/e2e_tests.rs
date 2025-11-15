@@ -6,7 +6,7 @@
 #![cfg(feature = "e2e-tests")]
 
 use ::playwright::api::*;
-use playwright::imp::utils::File;
+use ::playwright::imp::utils::File;
 use std::fs;
 use std::path::PathBuf;
 

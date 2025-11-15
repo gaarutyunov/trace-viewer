@@ -20,7 +20,9 @@ async fn test_app_loads_in_browser() -> Result<(), Box<dyn std::error::Error>> {
     let page = context.new_page().await?;
 
     page.goto_builder("http://localhost:8080").goto().await?;
-    page.wait_for_selector_builder(".app").wait().await?;
+    page.wait_for_selector_builder(".app")
+        .wait_for_selector()
+        .await?;
 
     let header = page.query_selector(".header").await?;
     assert!(header.is_some(), "Header not found");
@@ -47,7 +49,9 @@ async fn test_trace_file_upload_and_display() -> Result<(), Box<dyn std::error::
     let page = context.new_page().await?;
 
     page.goto_builder("http://localhost:8080").goto().await?;
-    page.wait_for_selector_builder(".drop-zone").wait().await?;
+    page.wait_for_selector_builder(".drop-zone")
+        .wait_for_selector()
+        .await?;
 
     let mut trace_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     trace_path.push("tests/fixtures/sample-trace.zip");
@@ -57,14 +61,14 @@ async fn test_trace_file_upload_and_display() -> Result<(), Box<dyn std::error::
         .await?;
     let file_input = page
         .wait_for_selector_builder("input[type='file']")
-        .wait()
+        .wait_for_selector()
         .await?;
     file_input
-        .set_input_files(SetInputFiles::Files(vec![trace_path]), Default::default())
+        .set_input_files(vec![trace_path.to_str().unwrap()], Default::default())
         .await?;
 
     page.wait_for_selector_builder(".trace-viewer")
-        .wait()
+        .wait_for_selector()
         .await?;
 
     let viewer = page.query_selector(".trace-viewer").await?;
@@ -92,7 +96,9 @@ async fn test_action_selection() -> Result<(), Box<dyn std::error::Error>> {
     let page = context.new_page().await?;
 
     page.goto_builder("http://localhost:8080").goto().await?;
-    page.wait_for_selector_builder(".drop-zone").wait().await?;
+    page.wait_for_selector_builder(".drop-zone")
+        .wait_for_selector()
+        .await?;
 
     // Upload trace file
     let mut trace_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -103,16 +109,16 @@ async fn test_action_selection() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     let file_input = page
         .wait_for_selector_builder("input[type='file']")
-        .wait()
+        .wait_for_selector()
         .await?;
     file_input
-        .set_input_files(SetInputFiles::Files(vec![trace_path]), Default::default())
+        .set_input_files(vec![trace_path.to_str().unwrap()], Default::default())
         .await?;
 
     // Wait for actions to load
     let first_action = page
         .wait_for_selector_builder(".action-item")
-        .wait()
+        .wait_for_selector()
         .await?;
 
     // Click the first action
@@ -120,7 +126,7 @@ async fn test_action_selection() -> Result<(), Box<dyn std::error::Error>> {
 
     // Wait for action details to appear
     page.wait_for_selector_builder(".action-details")
-        .wait()
+        .wait_for_selector()
         .await?;
 
     // Verify details are shown

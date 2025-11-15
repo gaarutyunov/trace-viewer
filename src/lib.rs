@@ -5,6 +5,7 @@ use web_sys::File;
 use yew::html::Scope;
 use yew::prelude::*;
 
+mod ansi_parser;
 mod components;
 pub mod models;
 pub mod trace_loader;

@@ -21,10 +21,11 @@ test.describe('Trace Viewer', () => {
 
     const tracePath = path.join(__dirname, '..', 'tests', 'fixtures', 'sample-trace.zip');
 
-    // Wait for file input to be attached and set files
-    const fileInput = page.locator('input[type="file"]');
-    await fileInput.waitFor({ state: 'attached', timeout: 5000 });
-    await fileInput.setInputFiles(tracePath);
+    // Use file chooser to handle file upload
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(tracePath);
 
     // Wait for trace viewer to load
     await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
@@ -40,10 +41,11 @@ test.describe('Trace Viewer', () => {
 
     const tracePath = path.join(__dirname, '..', 'tests', 'fixtures', 'sample-trace.zip');
 
-    // Wait for file input and upload trace file
-    const fileInput = page.locator('input[type="file"]');
-    await fileInput.waitFor({ state: 'attached', timeout: 5000 });
-    await fileInput.setInputFiles(tracePath);
+    // Use file chooser to handle file upload
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(tracePath);
 
     // Wait for actions to load
     await expect(page.locator('.action-item').first()).toBeVisible({ timeout: 10000 });

@@ -5,14 +5,14 @@
 
 #![cfg(feature = "e2e-tests")]
 
-use playwright::api::*;
+use ::playwright::api::*;
 use std::path::PathBuf;
 
 #[tokio::test]
 #[ignore]
 async fn test_app_loads_in_browser() -> Result<(), Box<dyn std::error::Error>> {
     let playwright = Playwright::initialize().await?;
-    playwright.install_chromium().await?;
+    playwright.install_chromium()?;
 
     let chromium = playwright.chromium();
     let browser = chromium.launcher().headless(true).launch().await?;
@@ -20,7 +20,7 @@ async fn test_app_loads_in_browser() -> Result<(), Box<dyn std::error::Error>> {
     let page = context.new_page().await?;
 
     page.goto_builder("http://localhost:8080").goto().await?;
-    page.wait_for_selector(".app", Default::default()).await?;
+    page.wait_for_selector_builder(".app").wait().await?;
 
     let header = page.query_selector(".header").await?;
     assert!(header.is_some(), "Header not found");
@@ -39,7 +39,7 @@ async fn test_app_loads_in_browser() -> Result<(), Box<dyn std::error::Error>> {
 #[ignore]
 async fn test_trace_file_upload_and_display() -> Result<(), Box<dyn std::error::Error>> {
     let playwright = Playwright::initialize().await?;
-    playwright.install_chromium().await?;
+    playwright.install_chromium()?;
 
     let chromium = playwright.chromium();
     let browser = chromium.launcher().headless(true).launch().await?;
@@ -47,8 +47,7 @@ async fn test_trace_file_upload_and_display() -> Result<(), Box<dyn std::error::
     let page = context.new_page().await?;
 
     page.goto_builder("http://localhost:8080").goto().await?;
-    page.wait_for_selector(".drop-zone", Default::default())
-        .await?;
+    page.wait_for_selector_builder(".drop-zone").wait().await?;
 
     let mut trace_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     trace_path.push("tests/fixtures/sample-trace.zip");
@@ -57,16 +56,15 @@ async fn test_trace_file_upload_and_display() -> Result<(), Box<dyn std::error::
         .click()
         .await?;
     let file_input = page
-        .wait_for_selector("input[type='file']", Default::default())
+        .wait_for_selector_builder("input[type='file']")
+        .wait()
         .await?;
     file_input
-        .set_input_files(
-            playwright::api::SetInputFiles::Files(vec![trace_path]),
-            Default::default(),
-        )
+        .set_input_files(SetInputFiles::Files(vec![trace_path]), Default::default())
         .await?;
 
-    page.wait_for_selector(".trace-viewer", Default::default())
+    page.wait_for_selector_builder(".trace-viewer")
+        .wait()
         .await?;
 
     let viewer = page.query_selector(".trace-viewer").await?;
@@ -86,7 +84,7 @@ async fn test_trace_file_upload_and_display() -> Result<(), Box<dyn std::error::
 #[ignore]
 async fn test_action_selection() -> Result<(), Box<dyn std::error::Error>> {
     let playwright = Playwright::initialize().await?;
-    playwright.install_chromium().await?;
+    playwright.install_chromium()?;
 
     let chromium = playwright.chromium();
     let browser = chromium.launcher().headless(true).launch().await?;
@@ -94,8 +92,7 @@ async fn test_action_selection() -> Result<(), Box<dyn std::error::Error>> {
     let page = context.new_page().await?;
 
     page.goto_builder("http://localhost:8080").goto().await?;
-    page.wait_for_selector(".drop-zone", Default::default())
-        .await?;
+    page.wait_for_selector_builder(".drop-zone").wait().await?;
 
     // Upload trace file
     let mut trace_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -105,25 +102,25 @@ async fn test_action_selection() -> Result<(), Box<dyn std::error::Error>> {
         .click()
         .await?;
     let file_input = page
-        .wait_for_selector("input[type='file']", Default::default())
+        .wait_for_selector_builder("input[type='file']")
+        .wait()
         .await?;
     file_input
-        .set_input_files(
-            playwright::api::SetInputFiles::Files(vec![trace_path]),
-            Default::default(),
-        )
+        .set_input_files(SetInputFiles::Files(vec![trace_path]), Default::default())
         .await?;
 
     // Wait for actions to load
     let first_action = page
-        .wait_for_selector(".action-item", Default::default())
+        .wait_for_selector_builder(".action-item")
+        .wait()
         .await?;
 
     // Click the first action
     first_action.click(Default::default()).await?;
 
     // Wait for action details to appear
-    page.wait_for_selector(".action-details", Default::default())
+    page.wait_for_selector_builder(".action-details")
+        .wait()
         .await?;
 
     // Verify details are shown

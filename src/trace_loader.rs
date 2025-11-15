@@ -33,6 +33,80 @@ pub fn load_trace_from_zip(bytes: &[u8]) -> Result<TraceModel, LoadError> {
 
     log::info!("ZIP archive opened, {} entries found", archive.len());
 
+    // Check if this is a report archive (contains data/ folder with nested ZIPs)
+    let is_report_archive = (0..archive.len()).any(|i| {
+        archive
+            .by_index(i)
+            .map(|f| {
+                let name = f.name();
+                name.starts_with("data/") && name.ends_with(".zip")
+            })
+            .unwrap_or(false)
+    });
+
+    if is_report_archive {
+        log::info!("Detected report archive format");
+        return load_report_archive(archive);
+    }
+
+    // Regular trace archive processing
+    load_single_trace_archive(archive)
+}
+
+fn load_report_archive(mut archive: ZipArchive<Cursor<&[u8]>>) -> Result<TraceModel, LoadError> {
+    let mut all_contexts = Vec::new();
+
+    // Find all ZIP files in the data/ folder
+    let mut nested_zips = Vec::new();
+    for i in 0..archive.len() {
+        let file = archive
+            .by_index(i)
+            .map_err(|e| LoadError::ZipError(e.to_string()))?;
+        let name = file.name().to_string();
+
+        if name.starts_with("data/") && name.ends_with(".zip") {
+            nested_zips.push((i, name));
+        }
+    }
+
+    if nested_zips.is_empty() {
+        return Err(LoadError::MissingTraceFile);
+    }
+
+    log::info!("Found {} nested trace archives", nested_zips.len());
+
+    // Process each nested trace archive
+    for (index, name) in nested_zips {
+        log::info!("Loading nested archive: {}", name);
+
+        // Read the nested ZIP file
+        let mut nested_file = archive
+            .by_index(index)
+            .map_err(|e| LoadError::ZipError(e.to_string()))?;
+
+        let mut nested_bytes = Vec::new();
+        nested_file
+            .read_to_end(&mut nested_bytes)
+            .map_err(|e| LoadError::IoError(e.to_string()))?;
+
+        // Recursively load the nested trace
+        let trace_model = load_trace_from_zip(&nested_bytes)?;
+        all_contexts.extend(trace_model.contexts);
+    }
+
+    log::info!(
+        "Loaded {} total contexts from report archive",
+        all_contexts.len()
+    );
+
+    Ok(TraceModel {
+        contexts: all_contexts,
+    })
+}
+
+fn load_single_trace_archive(
+    mut archive: ZipArchive<Cursor<&[u8]>>,
+) -> Result<TraceModel, LoadError> {
     // Find all .trace files
     let mut trace_files = Vec::new();
     let mut network_files = HashMap::new();

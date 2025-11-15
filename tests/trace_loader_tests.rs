@@ -1,5 +1,8 @@
+use std::io::Write;
 use trace_viewer::models::*;
 use trace_viewer::trace_loader::*;
+use zip::write::FileOptions;
+use zip::ZipWriter;
 
 #[test]
 fn test_load_trace_from_zip_success() {
@@ -228,4 +231,128 @@ fn test_action_parent_child_relationships() {
             );
         }
     }
+}
+
+#[test]
+fn test_load_report_archive() {
+    // Create a report archive with multiple nested trace archives
+    let sample_trace = include_bytes!("fixtures/sample-trace.zip");
+
+    let mut report_buf = Vec::new();
+    {
+        let mut report_zip = ZipWriter::new(std::io::Cursor::new(&mut report_buf));
+
+        // Add first trace to data/ folder
+        report_zip
+            .start_file("data/trace1.zip", FileOptions::default())
+            .unwrap();
+        report_zip.write_all(sample_trace).unwrap();
+
+        // Add second trace to data/ folder
+        report_zip
+            .start_file("data/trace2.zip", FileOptions::default())
+            .unwrap();
+        report_zip.write_all(sample_trace).unwrap();
+
+        report_zip.finish().unwrap();
+    }
+
+    // Load the report archive
+    let result = load_trace_from_zip(&report_buf);
+    assert!(
+        result.is_ok(),
+        "Failed to load report archive: {:?}",
+        result.err()
+    );
+
+    let model = result.unwrap();
+
+    // Should have contexts from both nested traces
+    assert!(
+        !model.contexts.is_empty(),
+        "No contexts loaded from report archive"
+    );
+
+    // Since we added the same trace twice, we should have double the contexts
+    let single_trace_model = load_trace_from_zip(sample_trace).unwrap();
+    let expected_context_count = single_trace_model.contexts.len() * 2;
+
+    assert_eq!(
+        model.contexts.len(),
+        expected_context_count,
+        "Expected {} contexts from 2 nested traces, got {}",
+        expected_context_count,
+        model.contexts.len()
+    );
+}
+
+#[test]
+fn test_report_archive_empty_data_folder() {
+    // Create a report archive with empty data/ folder
+    let mut report_buf = Vec::new();
+    {
+        let mut report_zip = ZipWriter::new(std::io::Cursor::new(&mut report_buf));
+
+        // Add an empty data/ directory
+        report_zip
+            .add_directory("data/", FileOptions::default())
+            .unwrap();
+
+        // Add a non-zip file in data/
+        report_zip
+            .start_file("data/readme.txt", FileOptions::default())
+            .unwrap();
+        report_zip.write_all(b"This is a readme").unwrap();
+
+        report_zip.finish().unwrap();
+    }
+
+    let result = load_trace_from_zip(&report_buf);
+    assert!(result.is_err(), "Should fail with empty data folder");
+    assert!(matches!(result.unwrap_err(), LoadError::MissingTraceFile));
+}
+
+#[test]
+fn test_report_archive_with_multiple_traces() {
+    // Create a report archive with 3 nested traces
+    let sample_trace = include_bytes!("fixtures/sample-trace.zip");
+
+    let mut report_buf = Vec::new();
+    {
+        let mut report_zip = ZipWriter::new(std::io::Cursor::new(&mut report_buf));
+
+        for i in 1..=3 {
+            let filename = format!("data/trace{}.zip", i);
+            report_zip
+                .start_file(&filename, FileOptions::default())
+                .unwrap();
+            report_zip.write_all(sample_trace).unwrap();
+        }
+
+        report_zip.finish().unwrap();
+    }
+
+    let result = load_trace_from_zip(&report_buf);
+    assert!(result.is_ok(), "Failed to load report archive");
+
+    let model = result.unwrap();
+    let single_trace_model = load_trace_from_zip(sample_trace).unwrap();
+    let expected_context_count = single_trace_model.contexts.len() * 3;
+
+    assert_eq!(
+        model.contexts.len(),
+        expected_context_count,
+        "Expected {} contexts from 3 nested traces",
+        expected_context_count
+    );
+}
+
+#[test]
+fn test_backward_compatibility_single_trace() {
+    // Ensure regular trace archives still work
+    let trace_bytes = include_bytes!("fixtures/sample-trace.zip");
+    let result = load_trace_from_zip(trace_bytes);
+
+    assert!(result.is_ok(), "Regular trace archive should still work");
+    assert!(!result.unwrap().contexts.is_empty());
 }

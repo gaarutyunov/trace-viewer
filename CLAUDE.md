@@ -41,31 +41,35 @@ cargo test --test models_tests --test trace_loader_tests
 
 ## E2E Tests
 
-E2E tests require playwright driver installation and may fail locally if not set up. They run automatically in CI.
+E2E tests use the official JavaScript Playwright library and run automatically in CI.
 
 To run E2E tests locally:
 ```bash
-# Install playwright via npm
-npm install -D @playwright/test
+# Install dependencies
+npm install
+
+# Install Playwright browsers
 npx playwright install --with-deps chromium
 
-# Build and serve the app
+# Build the app
 trunk build --release
-cd dist && python3 -m http.server 8080 &
 
-# Wait for app to start, then run tests with the e2e-tests feature
-cargo test --test e2e_tests --features e2e-tests -- --ignored
+# Run E2E tests (Playwright will start the server automatically)
+npm run test:e2e
 ```
 
-**Note:** E2E tests use the `e2e-tests` feature flag to conditionally compile playwright dependencies. This prevents playwright from being built during normal development.
+**Note:** The E2E tests are located in the `e2e/` directory and use JavaScript/Playwright.
+The `playwright.config.js` file configures Playwright to automatically start and stop
+the development server.
 
 ## CI/CD
 
 The CI pipeline automatically runs:
 - `cargo fmt --all -- --check` (formatting validation)
-- `cargo clippy --all-features -- -D warnings` (linting with all features, including e2e-tests)
-- `cargo test --lib --all-features` (unit tests)
-- E2E tests (in separate job with playwright and the `--features e2e-tests` flag)
+- `cargo clippy -- -D warnings` (linting)
+- `cargo test --lib` (unit tests)
+- `cargo test --test models_tests --test trace_loader_tests` (integration tests)
+- E2E tests (JavaScript/Playwright tests in separate job)
 
 All checks must pass before merging.
 
@@ -76,11 +80,12 @@ All checks must pass before merging.
   - `models.rs` - Data structures for traces
   - `trace_loader.rs` - ZIP parsing and trace loading
   - `components/` - Yew UI components
-- `tests/` - Test suite
+- `tests/` - Rust test suite
   - `models_tests.rs` - Unit tests for data models
   - `trace_loader_tests.rs` - Unit tests for trace loading
-  - `e2e_tests.rs` - End-to-end browser tests
   - `fixtures/` - Test data files
+- `e2e/` - End-to-end tests (JavaScript/Playwright)
+  - `trace-viewer.spec.js` - Browser tests
 - `.github/workflows/` - CI/CD configuration
 
 ## Common Tasks

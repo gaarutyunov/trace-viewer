@@ -35,17 +35,9 @@ serde_json = "1.0"
 log = "0.4"
 wasm-logger = "0.2"
 
-# E2E test dependencies - optional, only needed when running E2E tests
-playwright = { version = "0.0.20", optional = true }
-tokio = { version = "1", features = ["full"], optional = true }
-
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 tempfile = "3.8"
-
-[features]
-default = []
-e2e-tests = ["playwright", "tokio"]
 
 [profile.release]
 opt-level = "z"

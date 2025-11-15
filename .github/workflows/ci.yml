@@ -90,14 +90,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -111,29 +103,14 @@ jobs:
           wget -qO- https://github.com/trunk-rs/trunk/releases/download/v0.18.8/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
           sudo mv trunk /usr/local/bin/
 
-      - name: Install Playwright
-        run: |
-          npm install -D @playwright/test
-          npx playwright install --with-deps chromium
-
       - name: Build WASM app
         run: trunk build --release
 
-      - name: Serve app in background
-        run: |
-          cd dist
-          python3 -m http.server 8080 &
-          echo $! > server.pid
-          sleep 3
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
 
       - name: Run E2E tests
-        run: cargo test --test e2e_tests --features e2e-tests -- --ignored
-        env:
-          RUST_BACKTRACE: 1
-
-      - name: Stop server
-        if: always()
-        run: |
-          if [ -f dist/server.pid ]; then
-            kill $(cat dist/server.pid) || true
-          fi
+        run: npm run test:e2e

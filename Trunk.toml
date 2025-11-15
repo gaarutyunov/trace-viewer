@@ -1,20 +1,9 @@
-[[hooks]]
-stage = "pre_build"
-command = "cargo"
-command_arguments = ["fmt", "--all"]
-
-[[hooks]]
-stage = "pre_build"
-command = "cargo"
-command_arguments = ["clippy", "--all-features", "--", "-D", "warnings"]
-
 [build]
 target = "index.html"
 dist = "dist"
-release = true
 
 [watch]
-ignore = ["dist"]
+ignore = ["target"]
 
 [serve]
 port = 8080

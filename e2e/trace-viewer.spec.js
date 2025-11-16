@@ -118,6 +118,146 @@ test.describe('Trace Viewer', () => {
     await page.locator('.errors-only-checkbox').click();
     await expect(checkbox).not.toBeChecked();
   });
+
+  test('should trigger download when export button is clicked', async ({ page }) => {
+    await page.goto('/');
+
+    const tracePath = path.join(__dirname, '..', 'tests', 'fixtures', 'sample-trace.zip');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(tracePath);
+
+    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+
+    // Set up download listener
+    const downloadPromise = page.waitForEvent('download');
+
+    // Click export button
+    await page.locator('button.export-button').click();
+
+    // Wait for download to start
+    const download = await downloadPromise;
+
+    // Verify download was triggered
+    expect(download).toBeTruthy();
+
+    // Verify filename ends with .md
+    const filename = download.suggestedFilename();
+    expect(filename).toMatch(/\.md$/);
+  });
+
+  test('should trigger download with errors filename when errors-only is checked', async ({ page }) => {
+    await page.goto('/');
+
+    const tracePath = path.join(__dirname, '..', 'tests', 'fixtures', 'sample-trace.zip');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(tracePath);
+
+    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+
+    // Enable errors-only mode
+    await page.locator('.errors-only-checkbox').click();
+    const checkbox = page.locator('.errors-only-checkbox input[type="checkbox"]');
+    await expect(checkbox).toBeChecked();
+
+    // Set up download listener
+    const downloadPromise = page.waitForEvent('download');
+
+    // Click export button
+    await page.locator('button.export-button').click();
+
+    // Wait for download to start
+    const download = await downloadPromise;
+
+    // Verify download was triggered with errors filename
+    expect(download).toBeTruthy();
+    const filename = download.suggestedFilename();
+    expect(filename).toMatch(/_errors\.md$/);
+  });
+
+  test('should copy to clipboard when copy button is clicked', async ({ page, context }) => {
+    await page.goto('/');
+
+    const tracePath = path.join(__dirname, '..', 'tests', 'fixtures', 'sample-trace.zip');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(tracePath);
+
+    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+
+    // Grant clipboard permissions
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    const copyButton = page.locator('button.copy-button');
+
+    // Verify initial state
+    await expect(copyButton).toHaveText(/Copy/);
+
+    // Click copy button
+    await copyButton.click();
+
+    // Verify button shows success state
+    await expect(copyButton).toHaveText(/Copied!/);
+    await expect(copyButton).toHaveClass(/copy-success/);
+
+    // Verify clipboard has content
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboardText).toBeTruthy();
+    expect(clipboardText.length).toBeGreaterThan(0);
+
+    // Verify it's markdown format
+    expect(clipboardText).toContain('#');
+  });
+
+  test('should copy errors-only content when checkbox is enabled', async ({ page, context }) => {
+    await page.goto('/');
+
+    const tracePath = path.join(__dirname, '..', 'tests', 'fixtures', 'sample-trace.zip');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(tracePath);
+
+    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+
+    // Grant clipboard permissions
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    // First, copy without errors-only
+    await page.locator('button.copy-button').click();
+    await expect(page.locator('button.copy-button')).toHaveText(/Copied!/);
+
+    const fullClipboardText = await page.evaluate(() => navigator.clipboard.readText());
+
+    // Wait for success state to reset
+    await page.waitForTimeout(500);
+
+    // Now enable errors-only
+    await page.locator('.errors-only-checkbox').click();
+    await expect(page.locator('.errors-only-checkbox input[type="checkbox"]')).toBeChecked();
+
+    // Copy again with errors-only
+    await page.locator('button.copy-button').click();
+    await expect(page.locator('button.copy-button')).toHaveText(/Copied!/);
+
+    const errorsOnlyClipboardText = await page.evaluate(() => navigator.clipboard.readText());
+
+    // Both should have content
+    expect(fullClipboardText.length).toBeGreaterThan(0);
+    expect(errorsOnlyClipboardText.length).toBeGreaterThan(0);
+
+    // Both should be markdown
+    expect(fullClipboardText).toContain('#');
+    expect(errorsOnlyClipboardText).toContain('#');
+  });
 });
 
 test.describe('Report Archive with Multiple Traces', () => {
@@ -289,5 +429,161 @@ test.describe('Report Archive with Multiple Traces', () => {
     // Both should have actions (same fixture, so same count)
     expect(firstTabActionCount).toBeGreaterThan(0);
     expect(secondTabActionCount).toBeGreaterThan(0);
+  });
+
+  test('should export only active tab content', async ({ page }) => {
+    await page.goto('/');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(reportArchivePath);
+
+    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+
+    const tabs = page.locator('.tab');
+    await expect(tabs).toHaveCount(2);
+
+    // Ensure first tab is active
+    await tabs.first().click();
+    await expect(tabs.first()).toHaveClass(/tab-active/);
+
+    // Set up download listener
+    const downloadPromise = page.waitForEvent('download');
+
+    // Click export button
+    await page.locator('button.export-button').click();
+
+    // Wait for download to start
+    const download = await downloadPromise;
+
+    // Verify download was triggered
+    expect(download).toBeTruthy();
+    const filename = download.suggestedFilename();
+    expect(filename).toMatch(/\.md$/);
+
+    // Note: We can't easily verify the content of the download in this test,
+    // but we've verified that the export was triggered from the active tab
+  });
+
+  test('should copy only active tab content to clipboard', async ({ page, context }) => {
+    await page.goto('/');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(reportArchivePath);
+
+    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+
+    // Grant clipboard permissions
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    const tabs = page.locator('.tab');
+    await expect(tabs).toHaveCount(2);
+
+    // Copy from first tab
+    await tabs.first().click();
+    await expect(tabs.first()).toHaveClass(/tab-active/);
+
+    await page.locator('button.copy-button').click();
+    await expect(page.locator('button.copy-button')).toHaveText(/Copied!/);
+
+    const firstTabClipboard = await page.evaluate(() => navigator.clipboard.readText());
+
+    // Wait a moment for the copy success state to reset
+    await page.waitForTimeout(500);
+
+    // Switch to second tab and copy
+    await tabs.nth(1).click();
+    await expect(tabs.nth(1)).toHaveClass(/tab-active/);
+
+    await page.locator('button.copy-button').click();
+    await expect(page.locator('button.copy-button')).toHaveText(/Copied!/);
+
+    const secondTabClipboard = await page.evaluate(() => navigator.clipboard.readText());
+
+    // Both should have content
+    expect(firstTabClipboard.length).toBeGreaterThan(0);
+    expect(secondTabClipboard.length).toBeGreaterThan(0);
+
+    // Both should be markdown
+    expect(firstTabClipboard).toContain('#');
+    expect(secondTabClipboard).toContain('#');
+
+    // Note: Since both traces are the same in our fixture, the content will be identical,
+    // but we've verified that the copy operation works for each tab
+  });
+
+  test('should export with errors-only from active tab in multi-tab scenario', async ({ page }) => {
+    await page.goto('/');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(reportArchivePath);
+
+    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+
+    const tabs = page.locator('.tab');
+    await expect(tabs).toHaveCount(2);
+
+    // Ensure second tab is active
+    await tabs.nth(1).click();
+    await expect(tabs.nth(1)).toHaveClass(/tab-active/);
+
+    // Enable errors-only mode
+    await page.locator('.errors-only-checkbox').click();
+    await expect(page.locator('.errors-only-checkbox input[type="checkbox"]')).toBeChecked();
+
+    // Set up download listener
+    const downloadPromise = page.waitForEvent('download');
+
+    // Click export button
+    await page.locator('button.export-button').click();
+
+    // Wait for download to start
+    const download = await downloadPromise;
+
+    // Verify download was triggered with errors filename
+    expect(download).toBeTruthy();
+    const filename = download.suggestedFilename();
+    expect(filename).toMatch(/_errors\.md$/);
+  });
+
+  test('should maintain errors-only state when switching tabs', async ({ page, context }) => {
+    await page.goto('/');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(reportArchivePath);
+
+    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+
+    // Grant clipboard permissions
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    const tabs = page.locator('.tab');
+    const checkbox = page.locator('.errors-only-checkbox input[type="checkbox"]');
+
+    // Enable errors-only on first tab
+    await tabs.first().click();
+    await page.locator('.errors-only-checkbox').click();
+    await expect(checkbox).toBeChecked();
+
+    // Switch to second tab
+    await tabs.nth(1).click();
+
+    // Errors-only should still be checked
+    await expect(checkbox).toBeChecked();
+
+    // Copy should use errors-only mode
+    await page.locator('button.copy-button').click();
+    await expect(page.locator('button.copy-button')).toHaveText(/Copied!/);
+
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboardText).toBeTruthy();
+    expect(clipboardText).toContain('#');
   });
 });

@@ -197,6 +197,7 @@ fn export_action(output: &mut String, action: &ActionEntry, index: usize) {
 mod tests {
     use super::*;
     use crate::models::{ErrorEvent, LogEntry, SerializedError};
+    use std::collections::HashMap;
 
     #[test]
     fn test_export_empty_trace() {

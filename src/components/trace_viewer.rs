@@ -1,7 +1,8 @@
 use super::{ActionDetails, ActionList};
 use crate::markdown_exporter::{export_to_markdown, ExportOptions};
 use crate::models::{ActionEntry, TraceModel};
-use wasm_bindgen::JsCast;
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{Blob, BlobPropertyBag, HtmlAnchorElement, Url};
 use yew::prelude::*;
 
@@ -13,12 +14,15 @@ pub struct TraceViewerProps {
 pub struct TraceViewer {
     selected_action: Option<ActionEntry>,
     errors_only: bool,
+    copy_success: bool,
 }
 
 pub enum TraceViewerMsg {
     SelectAction(Box<ActionEntry>),
     ToggleErrorsOnly,
     ExportMarkdown,
+    CopyToClipboard,
+    ResetCopySuccess,
 }
 
 impl Component for TraceViewer {
@@ -29,6 +33,7 @@ impl Component for TraceViewer {
         Self {
             selected_action: None,
             errors_only: false,
+            copy_success: false,
         }
     }
 
@@ -45,6 +50,14 @@ impl Component for TraceViewer {
             TraceViewerMsg::ExportMarkdown => {
                 self.export_markdown(ctx);
                 false
+            }
+            TraceViewerMsg::CopyToClipboard => {
+                self.copy_to_clipboard(ctx);
+                false
+            }
+            TraceViewerMsg::ResetCopySuccess => {
+                self.copy_success = false;
+                true
             }
         }
     }
@@ -96,6 +109,13 @@ impl Component for TraceViewer {
                                                     />
                                                     <span>{ "Errors only" }</span>
                                                 </label>
+                                                <button
+                                                    class="copy-button"
+                                                    onclick={link.callback(|_| TraceViewerMsg::CopyToClipboard)}
+                                                    title="Copy trace to clipboard in markdown format"
+                                                >
+                                                    { if self.copy_success { "Copied!" } else { "Copy to Clipboard" } }
+                                                </button>
                                                 <button
                                                     class="export-button"
                                                     onclick={link.callback(|_| TraceViewerMsg::ExportMarkdown)}
@@ -251,5 +271,47 @@ impl TraceViewer {
 
         // Clean up the object URL
         Url::revoke_object_url(&url).ok();
+    }
+
+    fn copy_to_clipboard(&mut self, ctx: &Context<Self>) {
+        let model = &ctx.props().model;
+        let options = ExportOptions {
+            errors_only: self.errors_only,
+        };
+
+        let markdown = export_to_markdown(model, &options);
+
+        // Get window and navigator
+        let window = match web_sys::window() {
+            Some(window) => window,
+            None => {
+                log::error!("Failed to get window");
+                return;
+            }
+        };
+
+        let navigator = window.navigator();
+        let clipboard = navigator.clipboard();
+
+        // Copy to clipboard
+        let promise = clipboard.write_text(&markdown);
+
+        let link = ctx.link().clone();
+        let success_callback = Closure::wrap(Box::new(move |_: JsValue| {
+            log::info!("Text copied to clipboard successfully");
+            link.send_message(TraceViewerMsg::ResetCopySuccess);
+        }) as Box<dyn FnMut(JsValue)>);
+
+        let error_callback = Closure::wrap(Box::new(move |err: JsValue| {
+            log::error!("Failed to copy to clipboard: {:?}", err);
+        }) as Box<dyn FnMut(JsValue)>);
+
+        let _ = promise.then2(&success_callback, &error_callback);
+
+        success_callback.forget();
+        error_callback.forget();
+
+        // Set copy success state
+        self.copy_success = true;
     }
 }

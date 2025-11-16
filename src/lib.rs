@@ -7,6 +7,7 @@ use yew::prelude::*;
 
 mod ansi_parser;
 mod components;
+pub mod markdown_exporter;
 pub mod models;
 pub mod trace_loader;
 

@@ -199,6 +199,22 @@ body {
     border-bottom: 1px solid var(--border-color);
 }
 
+.viewer-header .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+}
+
+.viewer-header .header-left {
+    flex: 1;
+}
+
+.viewer-header .header-right {
+    display: flex;
+    align-items: center;
+}
+
 .viewer-header h2 {
     margin-bottom: 0.5rem;
 }
@@ -213,6 +229,47 @@ body {
     padding: 0.25rem 0.5rem;
     background-color: var(--surface-hover);
     border-radius: 4px;
+}
+
+.export-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.checkbox-label input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.export-button {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+}
+
+.export-button:hover {
+    background-color: var(--secondary-color);
+}
+
+.export-button:active {
+    background-color: var(--primary-color);
 }
 
 .viewer-content {
@@ -812,4 +869,33 @@ button {
 
 .action-item.error::before {
     background-color: var(--error-color);
+}
+
+/* Responsive Styles for Export Controls */
+@media (max-width: 768px) {
+    .viewer-header .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .viewer-header .header-right {
+        width: 100%;
+    }
+
+    .export-controls {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .export-button {
+        width: 100%;
+        padding: 0.75rem 1rem;
+    }
+
+    .checkbox-label {
+        padding: 0.5rem;
+    }
 }

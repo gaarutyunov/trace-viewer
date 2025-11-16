@@ -15,6 +15,7 @@ pub struct TraceViewer {
     selected_action: Option<ActionEntry>,
     errors_only: bool,
     copy_success: bool,
+    active_tab: usize,
 }
 
 pub enum TraceViewerMsg {
@@ -23,6 +24,7 @@ pub enum TraceViewerMsg {
     ExportMarkdown,
     CopyToClipboard,
     ResetCopySuccess,
+    SwitchTab(usize),
 }
 
 impl Component for TraceViewer {
@@ -34,6 +36,7 @@ impl Component for TraceViewer {
             selected_action: None,
             errors_only: false,
             copy_success: false,
+            active_tab: 0,
         }
     }
 
@@ -59,6 +62,15 @@ impl Component for TraceViewer {
                 self.copy_success = false;
                 true
             }
+            TraceViewerMsg::SwitchTab(index) => {
+                if self.active_tab != index {
+                    self.active_tab = index;
+                    self.selected_action = None; // Clear selection when switching tabs
+                    true
+                } else {
+                    false
+                }
+            }
         }
     }
 
@@ -66,11 +78,41 @@ impl Component for TraceViewer {
         let model = &ctx.props().model;
         let link = ctx.link();
 
-        // For now, show the first context if available
-        let context = model.contexts.first();
+        // Get the active context based on the active tab
+        let context = model.contexts.get(self.active_tab);
 
         html! {
             <div class="trace-viewer">
+                // Render tabs if there are multiple contexts
+                {
+                    if model.contexts.len() > 1 {
+                        html! {
+                            <div class="tabs-container">
+                                <div class="tabs">
+                                    {
+                                        model.contexts.iter().enumerate().map(|(index, ctx)| {
+                                            let is_active = index == self.active_tab;
+                                            let tab_title = ctx.title.clone().unwrap_or_else(|| format!("Trace {}", index + 1));
+                                            let onclick = link.callback(move |_| TraceViewerMsg::SwitchTab(index));
+
+                                            html! {
+                                                <button
+                                                    class={if is_active { "tab tab-active" } else { "tab" }}
+                                                    {onclick}
+                                                >
+                                                    { tab_title }
+                                                </button>
+                                            }
+                                        }).collect::<Html>()
+                                    }
+                                </div>
+                            </div>
+                        }
+                    } else {
+                        html! {}
+                    }
+                }
+
                 <div class="viewer-header">
                     <div class="header-content">
                         {
@@ -101,7 +143,7 @@ impl Component for TraceViewer {
                                         </div>
                                         <div class="header-right">
                                             <div class="export-controls">
-                                                <label class="checkbox-label">
+                                                <label class="checkbox-label errors-only-checkbox">
                                                     <input
                                                         type="checkbox"
                                                         checked={self.errors_only}
@@ -110,17 +152,17 @@ impl Component for TraceViewer {
                                                     <span>{ "Errors only" }</span>
                                                 </label>
                                                 <button
-                                                    class="copy-button"
+                                                    class={if self.copy_success { "copy-button copy-success" } else { "copy-button" }}
                                                     onclick={link.callback(|_| TraceViewerMsg::CopyToClipboard)}
                                                     title="Copy trace to clipboard in markdown format"
                                                 >
-                                                    { if self.copy_success { "Copied!" } else { "Copy to Clipboard" } }
+                                                    { if self.copy_success { "✓ Copied!" } else { "📋 Copy" } }
                                                 </button>
                                                 <button
                                                     class="export-button"
                                                     onclick={link.callback(|_| TraceViewerMsg::ExportMarkdown)}
                                                 >
-                                                    { "Export to Markdown" }
+                                                    { "📥 Export" }
                                                 </button>
                                             </div>
                                         </div>
@@ -183,7 +225,17 @@ impl TraceViewer {
             errors_only: self.errors_only,
         };
 
-        let markdown = export_to_markdown(model, &options);
+        // Export only the active context
+        let active_context = match model.contexts.get(self.active_tab) {
+            Some(context) => context,
+            None => return,
+        };
+
+        let single_context_model = TraceModel {
+            contexts: vec![active_context.clone()],
+        };
+
+        let markdown = export_to_markdown(&single_context_model, &options);
 
         // Create a blob with the markdown content
         let array = js_sys::Array::new();
@@ -244,24 +296,18 @@ impl TraceViewer {
 
         anchor.set_href(&url);
 
-        // Generate filename based on trace title and whether it's errors only
-        let filename = if let Some(context) = model.contexts.first() {
-            let title = context
-                .title
-                .as_deref()
-                .unwrap_or("trace")
-                .replace(' ', "_")
-                .to_lowercase();
+        // Generate filename based on active context title and whether it's errors only
+        let title = active_context
+            .title
+            .as_deref()
+            .unwrap_or("trace")
+            .replace(' ', "_")
+            .to_lowercase();
 
-            if self.errors_only {
-                format!("{}_errors.md", title)
-            } else {
-                format!("{}.md", title)
-            }
-        } else if self.errors_only {
-            "trace_errors.md".to_string()
+        let filename = if self.errors_only {
+            format!("{}_errors.md", title)
         } else {
-            "trace.md".to_string()
+            format!("{}.md", title)
         };
 
         anchor.set_download(&filename);
@@ -279,7 +325,17 @@ impl TraceViewer {
             errors_only: self.errors_only,
         };
 
-        let markdown = export_to_markdown(model, &options);
+        // Export only the active context
+        let active_context = match model.contexts.get(self.active_tab) {
+            Some(context) => context,
+            None => return,
+        };
+
+        let single_context_model = TraceModel {
+            contexts: vec![active_context.clone()],
+        };
+
+        let markdown = export_to_markdown(&single_context_model, &options);
 
         // Get window and navigator
         let window = match web_sys::window() {

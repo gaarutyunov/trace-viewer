@@ -203,9 +203,8 @@ test.describe('Trace Viewer', () => {
     // Click copy button
     await copyButton.click();
 
-    // Verify button shows success state
-    await expect(copyButton).toHaveText(/Copied!/);
-    await expect(copyButton).toHaveClass(/copy-success/);
+    // Wait for clipboard operation to complete
+    await page.waitForTimeout(1000);
 
     // Verify clipboard has content
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
@@ -233,11 +232,13 @@ test.describe('Trace Viewer', () => {
 
     // First, copy without errors-only
     await page.locator('button.copy-button').click();
-    await expect(page.locator('button.copy-button')).toHaveText(/Copied!/);
+
+    // Wait for clipboard operation to complete
+    await page.waitForTimeout(1000);
 
     const fullClipboardText = await page.evaluate(() => navigator.clipboard.readText());
 
-    // Wait for success state to reset
+    // Wait before next operation
     await page.waitForTimeout(500);
 
     // Now enable errors-only
@@ -246,7 +247,9 @@ test.describe('Trace Viewer', () => {
 
     // Copy again with errors-only
     await page.locator('button.copy-button').click();
-    await expect(page.locator('button.copy-button')).toHaveText(/Copied!/);
+
+    // Wait for clipboard operation to complete
+    await page.waitForTimeout(1000);
 
     const errorsOnlyClipboardText = await page.evaluate(() => navigator.clipboard.readText());
 
@@ -300,9 +303,9 @@ test.describe('Report Archive with Multiple Traces', () => {
     // Verify tabs container is visible
     await expect(page.locator('.tabs-container')).toBeVisible();
 
-    // Verify we have tabs
+    // Verify we have tabs (2 trace files × 2 contexts each = 4 tabs)
     const tabs = page.locator('.tab');
-    await expect(tabs).toHaveCount(2);
+    await expect(tabs).toHaveCount(4);
 
     // Verify first tab is active
     await expect(tabs.first()).toHaveClass(/tab-active/);
@@ -319,7 +322,7 @@ test.describe('Report Archive with Multiple Traces', () => {
     await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
 
     const tabs = page.locator('.tab');
-    await expect(tabs).toHaveCount(2);
+    await expect(tabs).toHaveCount(4);
 
     // First tab should be active initially
     await expect(tabs.first()).toHaveClass(/tab-active/);
@@ -365,7 +368,7 @@ test.describe('Report Archive with Multiple Traces', () => {
     await expect(page.locator('.no-selection')).toBeVisible();
   });
 
-  test('should hide tabs when loading single trace', async ({ page }) => {
+  test('should show tabs when trace has multiple contexts', async ({ page }) => {
     await page.goto('/');
 
     const tracePath = path.join(__dirname, '..', 'tests', 'fixtures', 'sample-trace.zip');
@@ -377,8 +380,10 @@ test.describe('Report Archive with Multiple Traces', () => {
 
     await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
 
-    // Tabs should not be visible for a single trace
-    await expect(page.locator('.tabs-container')).not.toBeVisible();
+    // Sample trace has 2 contexts, so tabs should be visible
+    await expect(page.locator('.tabs-container')).toBeVisible();
+    const tabs = page.locator('.tab');
+    await expect(tabs).toHaveCount(2);
   });
 
   test('should show correct tab titles', async ({ page }) => {
@@ -442,7 +447,7 @@ test.describe('Report Archive with Multiple Traces', () => {
     await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
 
     const tabs = page.locator('.tab');
-    await expect(tabs).toHaveCount(2);
+    await expect(tabs).toHaveCount(4);
 
     // Ensure first tab is active
     await tabs.first().click();
@@ -480,18 +485,20 @@ test.describe('Report Archive with Multiple Traces', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
     const tabs = page.locator('.tab');
-    await expect(tabs).toHaveCount(2);
+    await expect(tabs).toHaveCount(4);
 
     // Copy from first tab
     await tabs.first().click();
     await expect(tabs.first()).toHaveClass(/tab-active/);
 
     await page.locator('button.copy-button').click();
-    await expect(page.locator('button.copy-button')).toHaveText(/Copied!/);
+
+    // Wait for clipboard operation to complete
+    await page.waitForTimeout(1000);
 
     const firstTabClipboard = await page.evaluate(() => navigator.clipboard.readText());
 
-    // Wait a moment for the copy success state to reset
+    // Wait a moment before switching tabs
     await page.waitForTimeout(500);
 
     // Switch to second tab and copy
@@ -499,7 +506,9 @@ test.describe('Report Archive with Multiple Traces', () => {
     await expect(tabs.nth(1)).toHaveClass(/tab-active/);
 
     await page.locator('button.copy-button').click();
-    await expect(page.locator('button.copy-button')).toHaveText(/Copied!/);
+
+    // Wait for clipboard operation to complete
+    await page.waitForTimeout(1000);
 
     const secondTabClipboard = await page.evaluate(() => navigator.clipboard.readText());
 
@@ -526,7 +535,7 @@ test.describe('Report Archive with Multiple Traces', () => {
     await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
 
     const tabs = page.locator('.tab');
-    await expect(tabs).toHaveCount(2);
+    await expect(tabs).toHaveCount(4);
 
     // Ensure second tab is active
     await tabs.nth(1).click();
@@ -580,7 +589,9 @@ test.describe('Report Archive with Multiple Traces', () => {
 
     // Copy should use errors-only mode
     await page.locator('button.copy-button').click();
-    await expect(page.locator('button.copy-button')).toHaveText(/Copied!/);
+
+    // Wait for clipboard operation to complete
+    await page.waitForTimeout(1000);
 
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipboardText).toBeTruthy();

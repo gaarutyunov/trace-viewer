@@ -197,3 +197,71 @@ pub struct ResourceSnapshot {
     #[serde(default)]
     pub sha1: Option<String>,
 }
+
+// Test Case Models for displaying test results with markdown, screenshots, and video
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TestCaseCollection {
+    pub test_cases: Vec<TestCase>,
+}
+
+impl TestCaseCollection {
+    pub fn new() -> Self {
+        Self {
+            test_cases: Vec::new(),
+        }
+    }
+}
+
+impl Default for TestCaseCollection {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TestCase {
+    pub id: String,
+    pub name: String,
+    pub status: TestStatus,
+    #[serde(default)]
+    pub markdown_content: Option<String>,
+    #[serde(default)]
+    pub screenshots: Vec<TestAttachment>,
+    #[serde(default)]
+    pub video: Option<TestAttachment>,
+    #[serde(default)]
+    pub trace_file: Option<TestAttachment>,
+    #[serde(default)]
+    pub duration_ms: Option<f64>,
+    #[serde(default)]
+    pub error_message: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum TestStatus {
+    Passed,
+    Failed,
+    Skipped,
+    Pending,
+}
+
+impl TestStatus {
+    pub fn to_string(&self) -> &str {
+        match self {
+            TestStatus::Passed => "passed",
+            TestStatus::Failed => "failed",
+            TestStatus::Skipped => "skipped",
+            TestStatus::Pending => "pending",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TestAttachment {
+    pub name: String,
+    pub mime_type: String,
+    pub data_url: String, // Base64 encoded data URL
+    #[serde(default)]
+    pub size_bytes: Option<usize>,
+}

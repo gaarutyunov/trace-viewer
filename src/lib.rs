@@ -9,16 +9,18 @@ mod ansi_parser;
 mod components;
 pub mod markdown_exporter;
 pub mod models;
+pub mod test_case_loader;
 pub mod trace_loader;
 
-use components::{FileDropZone, TraceViewer};
-use models::TraceModel;
+use components::{FileDropZone, TestCaseList, TraceViewer};
+use models::{TestCaseCollection, TraceModel};
 
 #[derive(Clone, PartialEq)]
 pub enum LoadingState {
     Idle,
     Loading { progress: f32 },
-    Loaded { model: TraceModel },
+    LoadedTrace { model: TraceModel },
+    LoadedTestCases { test_cases: TestCaseCollection },
     Error { message: String },
 }
 
@@ -27,6 +29,7 @@ pub enum AppMessage {
     FileSelected(File),
     LoadingProgress(f32),
     TraceLoaded(TraceModel),
+    TestCasesLoaded(TestCaseCollection),
     LoadError(String),
 }
 
@@ -53,12 +56,12 @@ impl Component for App {
         match msg {
             AppMessage::FilesDropped(files) => {
                 if let Some(file) = files.first() {
-                    self.load_trace_file(ctx, file.clone());
+                    self.load_file(ctx, file.clone());
                 }
                 true
             }
             AppMessage::FileSelected(file) => {
-                self.load_trace_file(ctx, file);
+                self.load_file(ctx, file);
                 true
             }
             AppMessage::LoadingProgress(progress) => {
@@ -66,7 +69,11 @@ impl Component for App {
                 true
             }
             AppMessage::TraceLoaded(model) => {
-                self.state = LoadingState::Loaded { model };
+                self.state = LoadingState::LoadedTrace { model };
+                true
+            }
+            AppMessage::TestCasesLoaded(test_cases) => {
+                self.state = LoadingState::LoadedTestCases { test_cases };
                 true
             }
             AppMessage::LoadError(message) => {
@@ -113,7 +120,7 @@ impl App {
                 html! {
                     <div class="loading-container">
                         <div class="loading-spinner"></div>
-                        <h2>{ "Loading Playwright Trace..." }</h2>
+                        <h2>{ "Loading..." }</h2>
                         <div class="progress-bar">
                             <div class="progress-fill" style={format!("width: {}%", progress * 100.0)}></div>
                         </div>
@@ -121,9 +128,14 @@ impl App {
                     </div>
                 }
             }
-            LoadingState::Loaded { model } => {
+            LoadingState::LoadedTrace { model } => {
                 html! {
                     <TraceViewer model={model.clone()} />
+                }
+            }
+            LoadingState::LoadedTestCases { test_cases } => {
+                html! {
+                    <TestCaseList test_cases={test_cases.clone()} />
                 }
             }
             LoadingState::Error { message } => {
@@ -131,7 +143,7 @@ impl App {
 
                 html! {
                     <div class="error-container">
-                        <h2>{ "Error Loading Trace" }</h2>
+                        <h2>{ "Error Loading File" }</h2>
                         <p class="error-message">{ message }</p>
                         <button onclick={on_retry}>{ "Try Again" }</button>
                     </div>
@@ -140,11 +152,11 @@ impl App {
         }
     }
 
-    fn load_trace_file(&mut self, ctx: &Context<Self>, file: File) {
+    fn load_file(&mut self, ctx: &Context<Self>, file: File) {
         let link = ctx.link().clone();
         let file_name = file.name();
 
-        log::info!("Loading trace file: {}", file_name);
+        log::info!("Loading file: {}", file_name);
 
         self.state = LoadingState::Loading { progress: 0.0 };
 
@@ -157,15 +169,39 @@ impl App {
                         log::info!("File read successfully, {} bytes", bytes.len());
                         link.send_message(AppMessage::LoadingProgress(0.3));
 
-                        // Parse the ZIP file
+                        // Try loading as test cases first
+                        match test_case_loader::load_test_cases_from_zip(&bytes) {
+                            Ok(test_cases) if !test_cases.test_cases.is_empty() => {
+                                log::info!(
+                                    "Test cases loaded successfully: {} test cases",
+                                    test_cases.test_cases.len()
+                                );
+                                link.send_message(AppMessage::TestCasesLoaded(test_cases));
+                                return;
+                            }
+                            Ok(_) => {
+                                log::info!("No test cases found, trying to load as trace...");
+                            }
+                            Err(e) => {
+                                log::info!(
+                                    "Not a test case archive ({}), trying to load as trace...",
+                                    e
+                                );
+                            }
+                        }
+
+                        // If not test cases, try loading as a trace
                         match trace_loader::load_trace_from_zip(&bytes) {
                             Ok(model) => {
                                 log::info!("Trace loaded successfully");
                                 link.send_message(AppMessage::TraceLoaded(model));
                             }
                             Err(e) => {
-                                log::error!("Error loading trace: {}", e);
-                                link.send_message(AppMessage::LoadError(e.to_string()));
+                                log::error!("Error loading file: {}", e);
+                                link.send_message(AppMessage::LoadError(format!(
+                                    "Could not load file as trace or test cases: {}",
+                                    e
+                                )));
                             }
                         }
                     }

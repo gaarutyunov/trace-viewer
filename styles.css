@@ -481,6 +481,8 @@ body {
 /* Action Details Styles */
 .action-details {
     padding: 2rem;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 .details-header {
@@ -531,12 +533,16 @@ body {
     padding: 0.5rem;
     background-color: var(--surface-color);
     border-radius: 4px;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .detail-value.code {
     font-family: 'Courier New', monospace;
     font-size: 0.9rem;
     background-color: var(--code-bg);
+    overflow-x: auto;
+    word-break: break-all;
 }
 
 .detail-row {
@@ -559,6 +565,8 @@ body {
     margin: 0.25rem 0;
     background-color: var(--code-bg);
     border-radius: 4px;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .param-key {
@@ -568,6 +576,8 @@ body {
 
 .param-value {
     color: var(--text-primary);
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .error-section {
@@ -581,6 +591,8 @@ body {
     color: var(--error-color);
     padding: 0.5rem;
     margin-top: 0.5rem;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .error-stack {
@@ -617,6 +629,8 @@ body {
     border-radius: 4px;
     font-family: 'Courier New', monospace;
     font-size: 0.85rem;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .log-time {
@@ -626,6 +640,8 @@ body {
 
 .log-message {
     color: var(--text-primary);
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .no-selection,
@@ -1231,6 +1247,8 @@ button {
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .test-duration {
@@ -1243,6 +1261,8 @@ button {
     padding: 1.5rem;
     background-color: var(--bg-color);
     border-top: 1px solid var(--border-color);
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 .test-error-message {
@@ -1252,6 +1272,8 @@ button {
     border: 1px solid var(--error-color);
     border-radius: 8px;
     color: var(--error-color);
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .test-error-message strong {
@@ -1333,12 +1355,15 @@ button {
     border-radius: 6px;
     overflow-x: auto;
     margin-bottom: 1rem;
+    max-width: 100%;
 }
 
 .markdown-rendered pre code {
     background-color: transparent;
     padding: 0;
     color: var(--text-primary);
+    white-space: pre;
+    word-break: normal;
 }
 
 .markdown-rendered blockquote {
@@ -1354,6 +1379,8 @@ button {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 1rem;
+    display: block;
+    overflow-x: auto;
 }
 
 .markdown-rendered th,
@@ -1361,6 +1388,7 @@ button {
     padding: 0.75rem;
     border: 1px solid var(--border-color);
     text-align: left;
+    word-break: break-word;
 }
 
 .markdown-rendered th {

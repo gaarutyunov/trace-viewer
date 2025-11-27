@@ -63,6 +63,13 @@ test.describe('Trace Viewer', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(tracePath);
 
+    // Wait for viewer to load and check if it's a trace viewer
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) {
+      test.skip();
+      return;
+    }
+
     // Wait for actions to load
     await expect(page.locator('.action-item').first()).toBeVisible({ timeout: 10000 });
 

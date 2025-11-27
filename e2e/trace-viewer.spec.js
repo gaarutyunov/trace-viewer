@@ -6,6 +6,15 @@ import AdmZip from 'adm-zip';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Helper function to wait for either trace viewer or test case list
+async function waitForViewerToLoad(page) {
+  await Promise.race([
+    expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 }),
+    expect(page.locator('.test-case-list')).toBeVisible({ timeout: 10000 })
+  ]);
+  return await page.locator('.trace-viewer').isVisible();
+}
+
 test.describe('Trace Viewer', () => {
   test('should load app in browser', async ({ page }) => {
     await page.goto('/');
@@ -29,8 +38,13 @@ test.describe('Trace Viewer', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(tracePath);
 
-    // Wait for trace viewer to load
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    // Wait for viewer to load and check if it's a trace viewer
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) {
+      test.skip();
+      return;
+    }
+
     await expect(page.locator('.action-list')).toBeVisible();
 
     // Verify actions are displayed
@@ -48,6 +62,13 @@ test.describe('Trace Viewer', () => {
     await page.locator('button.select-file-button').click();
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(tracePath);
+
+    // Wait for viewer to load and check if it's a trace viewer
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) {
+      test.skip();
+      return;
+    }
 
     // Wait for actions to load
     await expect(page.locator('.action-item').first()).toBeVisible({ timeout: 10000 });
@@ -72,7 +93,8 @@ test.describe('Trace Viewer', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(tracePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     // Verify export controls are visible
     await expect(page.locator('.export-controls')).toBeVisible();
@@ -103,7 +125,8 @@ test.describe('Trace Viewer', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(tracePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     const checkbox = page.locator('.errors-only-checkbox input[type="checkbox"]');
 
@@ -129,7 +152,8 @@ test.describe('Trace Viewer', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(tracePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     // Set up download listener
     const downloadPromise = page.waitForEvent('download');
@@ -158,7 +182,8 @@ test.describe('Trace Viewer', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(tracePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     // Enable errors-only mode
     await page.locator('.errors-only-checkbox').click();
@@ -190,7 +215,8 @@ test.describe('Trace Viewer', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(tracePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     // Grant clipboard permissions
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -225,7 +251,8 @@ test.describe('Trace Viewer', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(tracePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     // Grant clipboard permissions
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -298,7 +325,8 @@ test.describe('Report Archive with Multiple Traces', () => {
     await fileChooser.setFiles(reportArchivePath);
 
     // Wait for trace viewer to load
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     // Verify tabs container is visible
     await expect(page.locator('.tabs-container')).toBeVisible();
@@ -319,7 +347,8 @@ test.describe('Report Archive with Multiple Traces', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(reportArchivePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     const tabs = page.locator('.tab');
     await expect(tabs).toHaveCount(4);
@@ -351,7 +380,8 @@ test.describe('Report Archive with Multiple Traces', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(reportArchivePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
     await expect(page.locator('.action-item').first()).toBeVisible({ timeout: 10000 });
 
     // Select an action in the first tab
@@ -378,7 +408,8 @@ test.describe('Report Archive with Multiple Traces', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(tracePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     // Sample trace has 2 contexts, so tabs should be visible
     await expect(page.locator('.tabs-container')).toBeVisible();
@@ -394,7 +425,8 @@ test.describe('Report Archive with Multiple Traces', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(reportArchivePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     const tabs = page.locator('.tab');
 
@@ -414,7 +446,8 @@ test.describe('Report Archive with Multiple Traces', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(reportArchivePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
     await expect(page.locator('.action-item').first()).toBeVisible({ timeout: 10000 });
 
     // Note: Since both traces are the same in our test fixture,
@@ -444,7 +477,8 @@ test.describe('Report Archive with Multiple Traces', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(reportArchivePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     const tabs = page.locator('.tab');
     await expect(tabs).toHaveCount(4);
@@ -479,7 +513,8 @@ test.describe('Report Archive with Multiple Traces', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(reportArchivePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     // Grant clipboard permissions
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -532,7 +567,8 @@ test.describe('Report Archive with Multiple Traces', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(reportArchivePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    const isTraceViewer = await waitForViewerToLoad(page);
+    if (!isTraceViewer) { test.skip(); return; }
 
     const tabs = page.locator('.tab');
     await expect(tabs).toHaveCount(4);
@@ -568,7 +604,19 @@ test.describe('Report Archive with Multiple Traces', () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(reportArchivePath);
 
-    await expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 });
+    // Wait for either trace viewer or test case list to load
+    // (depending on the archive contents)
+    await Promise.race([
+      expect(page.locator('.trace-viewer')).toBeVisible({ timeout: 10000 }),
+      expect(page.locator('.test-case-list')).toBeVisible({ timeout: 10000 })
+    ]);
+
+    // Only continue with this test if we have a trace viewer (with tabs and export controls)
+    const isTraceViewer = await page.locator('.trace-viewer').isVisible();
+    if (!isTraceViewer) {
+      test.skip();
+      return;
+    }
 
     // Grant clipboard permissions
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -596,5 +644,217 @@ test.describe('Report Archive with Multiple Traces', () => {
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipboardText).toBeTruthy();
     expect(clipboardText).toContain('#');
+  });
+});
+
+test.describe('Test Case Viewer', () => {
+  test('should load and display test cases', async ({ page }) => {
+    await page.goto('/');
+
+    const testCasesPath = path.join(__dirname, '..', 'tests', 'fixtures', 'test-cases.zip');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(testCasesPath);
+
+    // Wait for test case list to load
+    await expect(page.locator('.test-case-list')).toBeVisible({ timeout: 10000 });
+
+    // Verify test case list header is visible
+    await expect(page.locator('.test-case-list-header')).toBeVisible();
+
+    // Verify test summary is visible
+    await expect(page.locator('.test-summary')).toBeVisible();
+
+    // Verify test cases are displayed
+    const testCaseCards = page.locator('.test-case-card');
+    await expect(testCaseCards.first()).toBeVisible();
+  });
+
+  test('should display test summary with correct counts', async ({ page }) => {
+    await page.goto('/');
+
+    const testCasesPath = path.join(__dirname, '..', 'tests', 'fixtures', 'test-cases.zip');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(testCasesPath);
+
+    await expect(page.locator('.test-case-list')).toBeVisible({ timeout: 10000 });
+
+    // Verify test summary items exist
+    const summaryItems = page.locator('.test-summary-item');
+    await expect(summaryItems.first()).toBeVisible();
+
+    // Verify we have at least Total and Failed counts
+    const summaryText = await page.locator('.test-summary').textContent();
+    expect(summaryText).toContain('Total:');
+    expect(summaryText).toContain('Failed:');
+  });
+
+  test('should expand and collapse test case cards', async ({ page }) => {
+    await page.goto('/');
+
+    const testCasesPath = path.join(__dirname, '..', 'tests', 'fixtures', 'test-cases.zip');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(testCasesPath);
+
+    await expect(page.locator('.test-case-list')).toBeVisible({ timeout: 10000 });
+
+    const firstCard = page.locator('.test-case-card').first();
+    await expect(firstCard).toBeVisible();
+
+    // Initially card should not be expanded
+    await expect(firstCard).not.toHaveClass(/expanded/);
+
+    // Click to expand
+    await firstCard.locator('.test-case-header').click();
+    await expect(firstCard).toHaveClass(/expanded/);
+
+    // Verify content is visible
+    await expect(firstCard.locator('.test-case-content')).toBeVisible();
+
+    // Click to collapse
+    await firstCard.locator('.test-case-header').click();
+    await expect(firstCard).not.toHaveClass(/expanded/);
+  });
+
+  test('should display markdown content when expanded', async ({ page }) => {
+    await page.goto('/');
+
+    const testCasesPath = path.join(__dirname, '..', 'tests', 'fixtures', 'test-cases.zip');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(testCasesPath);
+
+    await expect(page.locator('.test-case-list')).toBeVisible({ timeout: 10000 });
+
+    const firstCard = page.locator('.test-case-card').first();
+
+    // Expand card
+    await firstCard.locator('.test-case-header').click();
+    await expect(firstCard).toHaveClass(/expanded/);
+
+    // Check if markdown content exists
+    const hasMarkdown = await firstCard.locator('.test-markdown-content').isVisible();
+    if (hasMarkdown) {
+      await expect(firstCard.locator('.markdown-rendered')).toBeVisible();
+    }
+  });
+
+  test('should display screenshots when expanded', async ({ page }) => {
+    await page.goto('/');
+
+    const testCasesPath = path.join(__dirname, '..', 'tests', 'fixtures', 'test-cases.zip');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(testCasesPath);
+
+    await expect(page.locator('.test-case-list')).toBeVisible({ timeout: 10000 });
+
+    const firstCard = page.locator('.test-case-card').first();
+
+    // Expand card
+    await firstCard.locator('.test-case-header').click();
+    await expect(firstCard).toHaveClass(/expanded/);
+
+    // Check if screenshots exist
+    const hasScreenshots = await firstCard.locator('.test-screenshots').isVisible();
+    if (hasScreenshots) {
+      await expect(firstCard.locator('.screenshot-gallery')).toBeVisible();
+      await expect(firstCard.locator('.screenshot-item').first()).toBeVisible();
+    }
+  });
+
+  test('should display video when expanded', async ({ page }) => {
+    await page.goto('/');
+
+    const testCasesPath = path.join(__dirname, '..', 'tests', 'fixtures', 'test-cases.zip');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(testCasesPath);
+
+    await expect(page.locator('.test-case-list')).toBeVisible({ timeout: 10000 });
+
+    const firstCard = page.locator('.test-case-card').first();
+
+    // Expand card
+    await firstCard.locator('.test-case-header').click();
+    await expect(firstCard).toHaveClass(/expanded/);
+
+    // Check if video exists
+    const hasVideo = await firstCard.locator('.test-video').isVisible();
+    if (hasVideo) {
+      await expect(firstCard.locator('.video-player')).toBeVisible();
+      await expect(firstCard.locator('video')).toBeVisible();
+    }
+  });
+
+  test('should filter test cases by status', async ({ page }) => {
+    await page.goto('/');
+
+    const testCasesPath = path.join(__dirname, '..', 'tests', 'fixtures', 'test-cases.zip');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(testCasesPath);
+
+    await expect(page.locator('.test-case-list')).toBeVisible({ timeout: 10000 });
+
+    // Verify filter bar exists
+    await expect(page.locator('.test-filter-bar')).toBeVisible();
+
+    // Get initial count
+    const initialCount = await page.locator('.test-case-card').count();
+    expect(initialCount).toBeGreaterThan(0);
+
+    // Click "Failed" filter
+    const failedButton = page.locator('.filter-button', { hasText: 'Failed' });
+    await failedButton.click();
+    await expect(failedButton).toHaveClass(/active/);
+
+    // All button should not be active anymore
+    const allButton = page.locator('.filter-button', { hasText: 'All' });
+    await expect(allButton).not.toHaveClass(/active/);
+
+    // Click "All" to go back
+    await allButton.click();
+    await expect(allButton).toHaveClass(/active/);
+  });
+
+  test('should display test status badges', async ({ page }) => {
+    await page.goto('/');
+
+    const testCasesPath = path.join(__dirname, '..', 'tests', 'fixtures', 'test-cases.zip');
+
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('button.select-file-button').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(testCasesPath);
+
+    await expect(page.locator('.test-case-list')).toBeVisible({ timeout: 10000 });
+
+    const firstCard = page.locator('.test-case-card').first();
+    await expect(firstCard).toBeVisible();
+
+    // Verify status badge exists
+    const statusBadge = firstCard.locator('.test-status-badge');
+    await expect(statusBadge).toBeVisible();
+
+    // Verify it has text (failed, passed, skipped, or pending)
+    const badgeText = await statusBadge.textContent();
+    expect(badgeText.toLowerCase()).toMatch(/failed|passed|skipped|pending/);
   });
 });

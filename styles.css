@@ -1375,6 +1375,22 @@ button {
     font-style: italic;
 }
 
+.markdown-rendered img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1rem 0;
+    border-radius: 4px;
+}
+
+.markdown-rendered video,
+.markdown-rendered iframe {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1rem 0;
+}
+
 .markdown-rendered table {
     width: 100%;
     border-collapse: collapse;
